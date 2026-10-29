@@ -2,10 +2,8 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Menu, X, Search, MapPin, BedDouble, Bath, Ruler, ShieldCheck,
-  BadgeCheck, MapPinned, Heart, Phone, Mail, UserRound, LogOut,
-  Camera, ChevronDown, ArrowUpRight, KeyRound
+  BadgeCheck, MapPinned, Heart, Phone, Mail, ChevronDown, ArrowUpRight
 } from "lucide-react";
-import { supabase } from "./supabase";
 import { properties, CONTACT } from "./data";
 import Listings from "./Listings";
 import PropertyDetail from "./PropertyDetail";
@@ -18,16 +16,8 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("All locations");
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState("login");
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [authMessage, setAuthMessage] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [photoBusy, setPhotoBusy] = useState(false);
+  const [contact, setContact] = useState({ name: "", email: "", phone: "", message: "" });
+  const [sent, setSent] = useState(false);
   const [saved, setSaved] = useState(() => { try { return JSON.parse(localStorage.getItem("rexaura-saved")) || []; } catch { return []; } });
   const [route, setRoute] = useState(getRoute);
   const toggleSave = (id) => setSaved((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
@@ -48,98 +38,13 @@ function App() {
     else { window.location.hash = "#/"; setTimeout(scroll, 150); }
   }
 
-  useEffect(() => {
-    if (!supabase) return;
-    let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (alive) setUser(data.session?.user ?? null);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => {
-      alive = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    async function loadProfile() {
-      if (!supabase || !user) { setProfile(null); return; }
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-      setProfile(data ?? { id: user.id, full_name: user.user_metadata?.full_name ?? "", avatar_url: user.user_metadata?.avatar_url ?? null });
-    }
-    loadProfile();
-  }, [user]);
-
-  async function handleAuth(e) {
+  const setField = (k) => (e) => setContact({ ...contact, [k]: e.target.value });
+  function sendContact(e) {
     e.preventDefault();
-    setAuthMessage("");
-    if (!supabase) {
-      setAuthMessage("Supabase is not configured yet. Add your project URL and publishable/anon key to the .env file.");
-      return;
-    }
-    setAuthBusy(true);
-    try {
-      if (authMode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email, password, options: { data: { full_name: fullName } }
-        });
-        if (error) throw error;
-        if (data.session) { setAuthOpen(false); setPassword(""); }
-        else setAuthMessage("Account created. Check your email to confirm your address, then log in.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        setAuthOpen(false); setPassword("");
-      }
-    } catch (err) {
-      setAuthMessage(err.message || "Unable to authenticate. Please try again.");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  async function handlePhoto(event) {
-    const file = event.target.files?.[0];
-    if (!file || !supabase || !user) return;
-    if (!file.type.startsWith("image/")) { setAuthMessage("Choose an image file."); return; }
-    if (file.size > 3 * 1024 * 1024) { setAuthMessage("Please choose an image smaller than 3 MB."); return; }
-    setPhotoBusy(true);
-    setAuthMessage("");
-    try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-      const avatarUrl = urlData.publicUrl;
-      const { error: updateError } = await supabase.from("profiles").upsert({
-        id: user.id, full_name: profile?.full_name || user.user_metadata?.full_name || "",
-        avatar_url: avatarUrl, updated_at: new Date().toISOString()
-      });
-      if (updateError) throw updateError;
-      setProfile((p) => ({ ...p, id: user.id, avatar_url: avatarUrl }));
-      setAuthMessage("Profile picture updated.");
-    } catch (err) {
-      setAuthMessage(err.message || "Could not upload profile picture.");
-    } finally {
-      setPhotoBusy(false);
-      event.target.value = "";
-    }
-  }
-
-  async function signOut() {
-    if (supabase) await supabase.auth.signOut();
-    setProfile(null);
-    setUser(null);
-    setAuthOpen(false);
-  }
-
-  function openAuth(mode = "login") {
-    setAuthMode(mode);
-    setAuthMessage("");
-    setAuthOpen(true);
+    const subject = encodeURIComponent(`Enquiry from ${contact.name}`);
+    const body = encodeURIComponent(`${contact.message}\n\nName: ${contact.name}\nEmail: ${contact.email}\nPhone: ${contact.phone}`);
+    window.location.href = `mailto:${CONTACT.email}?subject=${subject}&body=${body}`;
+    setSent(true);
   }
 
   return (
@@ -158,14 +63,7 @@ function App() {
           <a href="#/" onClick={(e) => goSection(e, "locations")}>Locations</a>
           <a href="#/" onClick={(e) => goSection(e, "about")}>About</a>
           <a href="#/" onClick={(e) => goSection(e, "contact")}>Contact</a>
-          {user ? (
-            <div className="nav-user">
-              <button className="avatar-button" onClick={() => openAuth("profile")} aria-label="Open profile">
-                {profile?.avatar_url ? <img src={profile.avatar_url} alt="Your profile" /> : <UserRound size={18} />}
-              </button>
-              <button className="nav-cta compact" onClick={signOut}><LogOut size={15} /> Log out</button>
-            </div>
-          ) : <button className="nav-cta" onClick={() => openAuth("login")}><UserRound size={16} /> Login / Sign up</button>}
+          <a href="#/" className="nav-cta" onClick={(e) => goSection(e, "contact")}><Mail size={16} /> Contact Us</a>
         </nav>
       </header>
 
@@ -232,11 +130,25 @@ function App() {
 
         <section className="contact-section section" id="contact">
           <div><p className="eyebrow">LET'S TALK PROPERTY</p><h2>Your next chapter <em>starts here.</em></h2><p>Tell us what you are looking for and our team will help you explore the right options.</p></div>
+          <div className="contact-stack">
           <div className="contact-card">
             <a href="mailto:rexgroups.uk@gmail.com"><Mail /> <span><small>Email us</small><strong>rexgroups.uk@gmail.com</strong></span><ArrowUpRight /></a>
             <a href="tel:+2348033564331"><Phone /> <span><small>Call our team</small><strong>0803 356 4331</strong></span><ArrowUpRight /></a>
             <a href="https://wa.me/2348033564331" target="_blank" rel="noreferrer"><span className="whatsapp-mark">WA</span><span><small>WhatsApp</small><strong>Chat with our team</strong></span><ArrowUpRight /></a>
           </div>
+          <form className="contact-form" onSubmit={sendContact}>
+            <h3>Send us a message</h3>
+            <label>Your name<input value={contact.name} onChange={setField("name")} placeholder="Enter your name" required autoComplete="name" /></label>
+            <div className="two-col">
+              <label>Email<input type="email" value={contact.email} onChange={setField("email")} placeholder="you@example.com" required autoComplete="email" /></label>
+              <label>Phone<input type="tel" value={contact.phone} onChange={setField("phone")} placeholder="0800 000 0000" autoComplete="tel" /></label>
+            </div>
+            <label>Message<textarea rows="4" value={contact.message} onChange={setField("message")} placeholder="Tell us what you are looking for..." required /></label>
+            <button className="gold-button" type="submit">Send Message</button>
+            {sent && <p className="auth-message" role="status">Your email app should open with your message. You can also call or WhatsApp us.</p>}
+          </form>
+          </div>
+
         </section>
       </>}
       </main>
@@ -246,32 +158,6 @@ function App() {
         <div className="footer-bottom"><span>© {new Date().getFullYear()} Rexaura Properties. All rights reserved.</span><span><a href="mailto:rexgroups.uk@gmail.com">rexgroups.uk@gmail.com</a> · <a href="tel:+2348033564331">08033564331</a></span></div>
       </footer>
 
-      {authOpen && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setAuthOpen(false); }}>
-        <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-          <button className="modal-close" onClick={() => setAuthOpen(false)} aria-label="Close"><X /></button>
-          {authMode === "profile" && user ? <>
-            <div className="modal-brand"><span className="brand-mark"><span className="brand-diamond">R</span></span></div>
-            <h2 id="auth-title">Your Profile</h2><p className="modal-subtitle">Manage your account details.</p>
-            <div className="profile-picture">{profile?.avatar_url ? <img src={profile.avatar_url} alt="Profile" /> : <UserRound size={38} />}</div>
-            <p className="profile-email">{user.email}</p>
-            <label className="upload-button"><Camera size={17} /> {photoBusy ? "Uploading..." : "Change profile picture"}<input type="file" accept="image/*" onChange={handlePhoto} disabled={photoBusy} /></label>
-            <p className="fine-print">Image files only · Maximum 3 MB</p>
-          </> : <>
-            <div className="modal-brand"><span className="brand-mark"><span className="brand-diamond">R</span></span></div>
-            <h2 id="auth-title">{authMode === "signup" ? "Create your account" : "Welcome back"}</h2>
-            <p className="modal-subtitle">{authMode === "signup" ? "Save properties and manage your profile." : "Log in to your Rexaura account."}</p>
-            <form className="auth-form" onSubmit={handleAuth}>
-              {authMode === "signup" && <label>Full name<input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" required autoComplete="name" /></label>}
-              <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoComplete="email" /></label>
-              <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" required minLength={6} autoComplete={authMode === "signup" ? "new-password" : "current-password"} /></label>
-              <button className="gold-button" type="submit" disabled={authBusy}>{authBusy ? "Please wait..." : authMode === "signup" ? "Create account" : "Log in"} <KeyRound size={16} /></button>
-            </form>
-            <p className="switch-auth">{authMode === "signup" ? "Already have an account?" : "New to Rexaura?"} <button onClick={() => { setAuthMode(authMode === "signup" ? "login" : "signup"); setAuthMessage(""); }}>{authMode === "signup" ? "Log in" : "Create an account"}</button></p>
-          </>}
-          {authMessage && <p className="auth-message" role="status">{authMessage}</p>}
-          {!supabase && <p className="setup-note">Setup needed: add your Supabase keys in <code>.env</code> to enable account features.</p>}
-        </section>
-      </div>}
     </div>
   );
 }
