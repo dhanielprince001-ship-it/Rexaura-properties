@@ -52,3 +52,9 @@
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (max-width:1000px){.listing-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row{grid-template-columns:repeat(2,1fr)}.search-btn{grid-column:1/-1;padding:14px}.detail-layout{grid-template-columns:1fr}.agent-card{position:static}}
 @media (max-width:680px){.page{padding:32px 20px 60px}.listing-grid{grid-template-columns:1fr}.result-bar{flex-direction:column;align-items:flex-start}.amenities{grid-template-columns:1fr}.detail-price{font-size:28px}.stat-row span{flex:1 1 44%}.thumbs{gap:8px}.pagination span{display:none}}
+
+.contact-stack{display:grid;gap:18px}.nav-cta{display:inline-flex;align-items:center;gap:8px}
+.contact-form{background:var(--panel);border:1px solid #8e754b;border-radius:14px;padding:24px;display:grid;gap:14px}.contact-form h3{margin:0;font-family:var(--serif);font-size:24px;font-weight:500}
+.contact-form label{display:grid;gap:6px;font-size:12px;color:#e6d9c4}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.contact-form input,.contact-form textarea{width:100%;background:#100f0e;border:1px solid #514331;border-radius:6px;padding:12px;color:#fff;outline:none;font:inherit;font-size:13px;resize:vertical}.contact-form input:focus,.contact-form textarea:focus{border-color:var(--gold)}
+@media (max-width:680px){.two-col{grid-template-columns:1fr}}
