@@ -4,7 +4,7 @@ import { properties, AMENITIES, CONTACT } from "./data";
 
 export default function PropertyDetail({ id, saved, toggleSave }) {
   const p = properties.find((x) => x.id === Number(id));
-  const gallery = p ? p.gallery || [p.image, "/images/home-villa.jpeg", "/images/about-interior.jpeg"] : [];
+  const gallery = p ? p.gallery || [p.image] : [];
   const [active, setActive] = useState(0);
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
   const [sent, setSent] = useState(false);
