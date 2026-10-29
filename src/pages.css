@@ -58,3 +58,5 @@
 .contact-form label{display:grid;gap:6px;font-size:12px;color:#e6d9c4}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .contact-form input,.contact-form textarea{width:100%;background:#100f0e;border:1px solid #514331;border-radius:6px;padding:12px;color:#fff;outline:none;font:inherit;font-size:13px;resize:vertical}.contact-form input:focus,.contact-form textarea:focus{border-color:var(--gold)}
 @media (max-width:680px){.two-col{grid-template-columns:1fr}}
+.main-nav>a.nav-cta{background:var(--gold);color:#17120a}.main-nav>a.nav-cta:hover{color:#17120a;background:var(--gold-light)}
+@media (max-width:860px){.main-nav>a.nav-cta{border:1px solid var(--gold);padding:12px 20px;margin-top:15px;align-self:flex-start}}
