@@ -25,10 +25,10 @@ export const properties = [
     features: ["Courtyard", "Pool", "Guest House"], image: "/images/listing-6.jpg" },
   { id: 7, tag: "Featured", home: true, location: "PORT HARCOURT", area: "Old GRA, Port Harcourt", address: "Old GRA, Port Harcourt, Rivers State",
     title: "Modern Waterfront Villa", type: "Villa", priceM: 285, price: "₦285,000,000", beds: 5, baths: 4, size: "450 sqm", built: 2021,
-    features: ["Waterfront", "Pool", "Garden"], image: "/images/home-villa.jpeg" },
+    features: ["Waterfront", "Pool", "Garden"], image: "/images/home-1.jpg" },
   { id: 8, tag: "New", home: true, location: "LAGOS", area: "Ikoyi, Lagos", address: "Ikoyi, Lagos",
     title: "Contemporary Palace Estate Villa", type: "Estate", priceM: 420, price: "₦420,000,000", beds: 6, baths: 5, size: "620 sqm", built: 2022,
-    features: ["Cinema", "Garden", "Smart Home"], image: "/images/about-interior.jpeg" }
+    features: ["Cinema", "Garden", "Smart Home"], image: "/images/home-2.jpg" }
 ];
 
 export const CONTACT = { email: "rexgroups.uk@gmail.com", phone: "08033564331", intl: "2348033564331", display: "0803 356 4331" };
